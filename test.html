@@ -1,8 +1,80 @@
 <!DOCTYPE html>
-<html><head>
+<html><head><script src="observing-wrapper.js"></script><script>
 
-<script src="observing-wrapper.js"></script>
+!function testMethodsOverride() {
+  var obsnObject = new observingWrapper.__.ObservableObject({p:'foo', f: new 
+    Function});
+  var observer = new observingWrapper.__.Observer;
+  var i=0;
 
-</head><body> 
-  
-</body></html>
+  observer.add(obsnObject, function(propertyName, propertyValue) {
+    propertyName === 'p' && propertyValue === 'foo0' && i++;
+    propertyName === 'f' && propertyValue[0] === 'foo1' && propertyValue[1] 
+      === 'foo2' && i++;
+    propertyName === 'f' && propertyValue === 'foo3' && i++; 
+  });
+
+  obsnObject.p = 'foo0';
+  obsnObject.f('foo1', 'foo2');
+  obsnObject.f='foo3';
+
+  if (i === 3)
+    document.write('<p style="color:green">Observation works</p>');
+  else
+    document.write('<p style="color:red">Observation failed</p>');
+}()
+
+!function testPrototyping() {
+  function ff() {this.p1='foo1'}; 
+  ff.prototype = {p0:'foo0'};
+
+  var objectWithPrototype = new ff;
+  var obsnObject = new observingWrapper.__.ObservableObject(objectWithPrototype);
+
+  if (obsnObject.p0)
+    document.write('<p style="color:green">Prototyping works</p>');
+  else
+    document.write('<p style="color:red">Prototyping failed</p>');
+}()
+
+!function testArray() {
+  var obsnObject = new observingWrapper.__.ObservableObject([]);
+  var observer = new observingWrapper.__.Observer;
+  var i = 0;
+  observer.add(obsnObject, function(methodName, args, result) {
+    // console.log(methodName, args);
+    if (['push','splice'].indexOf(methodName)>-1 && args[0]===1)
+      i++;
+  });
+
+  obsnObject.push(1);
+  obsnObject.splice(1);
+
+  if (i === 2 && obsnObject.length===1)
+    document.write('<p style="color:green">Arrays work</p>');
+  else
+    document.write('<p style="color:red">Arrays failed</p>');
+}()
+
+!function testObservingWrapper() {
+  var i=0;
+  var obsnObject = observingWrapper({p:'foo', f: new Function}, function(
+    propertyName, propertyValue) {
+    
+    propertyName === 'p' && propertyValue === 'foo0' && i++;
+    propertyName === 'f' && propertyValue[0] === 'foo1' && propertyValue[1] 
+      === 'foo2' && i++;
+  });
+
+  obsnObject.p = 'foo0';
+  obsnObject.f('foo1', 'foo2');
+
+  if (i === 2)
+    document.write('<p style="color:green">Observing wrapper works</p>');
+  else
+    document.write('<p style="color:red">Observing wrapper failed</p>');
+}()
+
+document.close(); 
+
+</script></head><body></body></html>
