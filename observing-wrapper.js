@@ -126,12 +126,9 @@
 
   function observingWrapper(userObjectOrObservable, userChangeHandler)
   {
-    var observableObject, userObjectType;
-
-    userObjectType = Object.prototype.toString.call(userObjectOrObservable);
-
-    observableObject = userObjectOrObservable.__addObserver ? 
-      userObjectOrObservable : new ObservableObject(userObjectOrObservable);
+    var observableObject = userObjectOrObservable && userObjectOrObservable.
+      __addObserver ? userObjectOrObservable : new ObservableObject(
+        userObjectOrObservable);
 
     userChangeHandler && observer.add(observableObject, userChangeHandler);
 
