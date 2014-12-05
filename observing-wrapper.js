@@ -22,7 +22,7 @@
                 observable.__originalObject, args);
 
             observers.forEach(function(observer) {
-              observer._notify(observable, [propertyName, args, result]);
+              observer.__notify(observable, [propertyName, args, result]);
             });
 
             return result;
@@ -34,7 +34,7 @@
         observable.__originalObject[propertyName] = userValue;
 
         observers.forEach(function(observer) {
-          observer._notify(observable, [propertyName, userValue]);
+          observer.__notify(observable, [propertyName, userValue]);
         });
       }
 
@@ -57,7 +57,6 @@
     var observable = this, observers = [];
 
     this.__originalObject = {};
-    this.__addObserver = new Function;
 
     if (typeof userObject === 'object')
       this.__originalObject = userObject;
@@ -68,7 +67,7 @@
 
         Object.getOwnPropertyNames(observable.__originalObject).forEach(
           function(propertyName) {
-            userObserver._notify(observable, 
+            userObserver.__notify(observable, 
               [propertyName, observable.__originalObject[propertyName]]);
           });
       }
@@ -91,7 +90,7 @@
   {
     var observables = [], changeHandlers = [], observer = this;
 
-    this._notify = function(userObservable, notifyArguments) {
+    this.__notify = function(userObservable, notifyArguments) {
       var obsleInd = observables.indexOf(userObservable);
 
       changeHandlers[obsleInd] && 
@@ -111,7 +110,7 @@
         changeHandlers.push([userChangeHandler]);
       }
 
-      userObservable.__addObserver(this);
+      userObservable.__addObserver(observer);
     }
 
     this.remove = function(userObservable, userChangeHandler) {
@@ -134,7 +133,7 @@
   function observingWrapper(userObjectOrObservable, userChangeHandler)
   {
     var observableObject = userObjectOrObservable && userObjectOrObservable.
-      __addObserver ? userObjectOrObservable : new ObservableObject(
+      __originalObject ? userObjectOrObservable : new ObservableObject(
         userObjectOrObservable);
 
     userChangeHandler && observer.add(observableObject, userChangeHandler);
