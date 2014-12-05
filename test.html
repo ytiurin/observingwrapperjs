@@ -30,7 +30,7 @@ function outputResult(condition, trueMessage, falseMessage)
 }()
 
 !function testPrototyping() {
-  function ff() {this.p1='foo1'}; 
+  function ff() {this.p1='foo1'};
   ff.prototype = {p0:'foo0'};
 
   var objectWithPrototype = new ff;
@@ -69,6 +69,20 @@ function outputResult(condition, trueMessage, falseMessage)
   obsnObject.f('foo1', 'foo2');
   
   outputResult(i === 2, 'Observing wrapper works', 'Observing wrapper failed');
+}()
+
+!function testRemoving() {
+  var i = 0;
+  function f1() {i++};
+  // function f2() {};
+  var obsnObject = new observingWrapper.__.ObservableObject({p:''});
+  var observer = new observingWrapper.__.Observer;
+
+  observer.add(obsnObject, f1);
+  observer.remove(obsnObject, f1);
+  observer.add(obsnObject, f1);
+
+  outputResult(i===2, 'Removing works', 'Removing failed');
 }()
 
 document.close(); 

@@ -74,6 +74,13 @@
       }
     }
 
+    this.__removeObserver = function(userObserver) {
+      var rmInd;
+      
+      (rmInd = observers.indexOf(userObserver)) > -1 && 
+        observers.splice(rmInd, 1);
+    }
+
     getDeepPropertyNames(observable.__originalObject).forEach(
       function(propertyName) {
         declareObservableProperty(observers, observable, propertyName);
@@ -82,7 +89,7 @@
 
   function Observer()
   {
-    var observables = [], changeHandlers = [];
+    var observables = [], changeHandlers = [], observer = this;
 
     this._notify = function(userObservable, notifyArguments) {
       var obsleInd = observables.indexOf(userObservable);
@@ -108,19 +115,19 @@
     }
 
     this.remove = function(userObservable, userChangeHandler) {
-      var obsleInd = observables.indexOf(userObservable);
+      var obsleInd, rmInd;
 
-      if (obsleInd > -1) 
+      if ((obsleInd = observables.indexOf(userObservable)) > -1) {
         if (userChangeHandler) {
-          var changeHandlerInd = changeHandlers[obsleInd].indexOf(
-            userChangeHandler);
-
-          changeHandlerInd > -1 && (changeHandlers[obsleInd][changeHandlerInd] =
-            changeHandlers[obsleInd].splice(changeHandlerInd, 1));
+          (rmInd = changeHandlers[obsleInd].indexOf(userChangeHandler)) > -1 &&
+            changeHandlers[obsleInd].splice(rmInd, 1);
         }
         else {
-          changeHandlers[obsleInd] = []
+          changeHandlers[obsleInd] = [];
         }
+
+        userObservable.__removeObserver(observer);
+      }
     }
   }
 
