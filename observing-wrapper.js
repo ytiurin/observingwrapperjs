@@ -61,16 +61,15 @@
     if (typeof userObject === 'object')
       this.__originalObject = userObject;
 
-    this.__addObserver = function(userObserver) {
-      if (observers.indexOf(userObserver) === -1) {
+    this.__addObserver = function(userObserver, onceChangeHandler) {
+      if (observers.indexOf(userObserver) === -1)
         observers.push(userObserver);
 
-        Object.getOwnPropertyNames(observable.__originalObject).forEach(
-          function(propertyName) {
-            userObserver.__notify(observable, 
-              [propertyName, observable.__originalObject[propertyName]]);
-          });
-      }
+      Object.getOwnPropertyNames(observable.__originalObject).forEach(
+        function(propertyName) {
+          onceChangeHandler.apply(observable.__originalObject, [propertyName, 
+            observable.__originalObject[propertyName]]);
+        });
     }
 
     this.__removeObserver = function(userObserver) {
@@ -110,7 +109,7 @@
         changeHandlers.push([userChangeHandler]);
       }
 
-      userObservable.__addObserver(observer);
+      userObservable.__addObserver(observer, userChangeHandler);
     }
 
     this.remove = function(userObservable, userChangeHandler) {
