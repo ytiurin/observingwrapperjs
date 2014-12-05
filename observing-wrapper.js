@@ -120,11 +120,12 @@
           (rmInd = changeHandlers[obsleInd].indexOf(userChangeHandler)) > -1 &&
             changeHandlers[obsleInd].splice(rmInd, 1);
         }
-        else {
-          changeHandlers[obsleInd] = [];
+        
+        if (!changeHandlers[obsleInd].length) {
+          observables.splice(obsleInd, 1);
+          changeHandlers.splice(obsleInd, 1);
+          userObservable.__removeObserver(observer);
         }
-
-        userObservable.__removeObserver(observer);
       }
     }
   }
