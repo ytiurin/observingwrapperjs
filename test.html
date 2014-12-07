@@ -44,14 +44,15 @@ function outputResult(condition, trueMessage, falseMessage)
   var observer = new observingWrapper.__.Observer;
   var i = 0;
   observer.add(obsnObject, function(methodName, args, result) {
-    if (['push','splice'].indexOf(methodName)>-1 && args[0]===1)
+    if (['push','splice'].indexOf(methodName)>-1)
       i++;
   });
 
   obsnObject.push(1);
-  obsnObject.splice(1);
-
-  outputResult(i === 2 && obsnObject.length===1, 'Arrays work', 'Arrays failed');
+  obsnObject.push(2);
+  obsnObject.splice(0,1);
+  
+  outputResult(i === 3 && obsnObject.length===1 && obsnObject[0]===2, 'Arrays work', 'Arrays failed');
 }()
 
 !function testObservingWrapper() {

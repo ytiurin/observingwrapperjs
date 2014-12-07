@@ -11,7 +11,7 @@
       });
   }()
 
-  function declareObservableProperty(observers, observable, propertyName)
+  function defineObservableProperty(observers, observable, propertyName)
   {
     function get() {
       return typeof observable.__originalObject[propertyName] !== 'function' ? 
@@ -20,6 +20,8 @@
             var args = Array.prototype.slice.call(arguments, 0),
               result = observable.__originalObject[propertyName].apply(
                 observable.__originalObject, args);
+
+            observable.__defineObservableProperties();
 
             observers.forEach(function(observer) {
               observer.__notify(observable, [propertyName, args, result]);
@@ -41,8 +43,8 @@
       return observable;
     }
 
-    Object.defineProperty(observable, propertyName,
-      {enumerable : true, configurable : true, get: get, set: set});
+    Object.defineProperty(observable, propertyName, {enumerable : true, 
+      configurable : true, get: get, set: set});
   }
 
   function getDeepPropertyNames(obj)
@@ -54,22 +56,36 @@
 
   function ObservableObject(userObject)
   {
-    var observable = this, observers = [];
+    var observable = this, observers = [], deepPropertyNames = [];
 
     this.__originalObject = {};
 
     if (typeof userObject === 'object')
       this.__originalObject = userObject;
 
-    this.__addObserver = function(userObserver, onceChangeHandler) {
+    this.__addObserver = function(userObserver, initHandler) {
       if (observers.indexOf(userObserver) === -1)
         observers.push(userObserver);
 
       Object.getOwnPropertyNames(observable.__originalObject).forEach(
         function(propertyName) {
-          onceChangeHandler.apply(observable.__originalObject, [propertyName, 
+          initHandler.apply(observable.__originalObject, [propertyName, 
             observable.__originalObject[propertyName]]);
         });
+    }
+
+    this.__defineObservableProperties = function() {
+      var nDeepPropertyNames = getDeepPropertyNames(observable.__originalObject),
+        o = deepPropertyNames.length === nDeepPropertyNames.length && 
+          deepPropertyNames.every(function(n, i, arr) {
+            return nDeepPropertyNames[i] === n;
+          })
+
+      !o && (deepPropertyNames.forEach(function(propertyName) {
+          delete observable[propertyName];
+        }), nDeepPropertyNames.forEach(function(propertyName) {
+          defineObservableProperty(observers, observable, propertyName);
+        }), deepPropertyNames = nDeepPropertyNames);
     }
 
     this.__removeObserver = function(userObserver) {
@@ -79,10 +95,7 @@
         observers.splice(rmInd, 1);
     }
 
-    getDeepPropertyNames(observable.__originalObject).forEach(
-      function(propertyName) {
-        declareObservableProperty(observers, observable, propertyName);
-      });
+    this.__defineObservableProperties();
   }
 
   function Observer()
