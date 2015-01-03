@@ -1,4 +1,4 @@
-observingwrapperjs
+ObservingWrapper.js
 ==================
 
-Fast and handy observer for objects and arrays
+Data bind booster.

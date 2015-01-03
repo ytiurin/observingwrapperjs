@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><script src="observing-wrapper.js"></script><script>
+<html><head><script src="observing-wrapper2.js"></script><script>
 
 function outputResult(condition, trueMessage, falseMessage)
 {
@@ -9,22 +9,21 @@ function outputResult(condition, trueMessage, falseMessage)
   document.close();
 }
 
-!function testMethodsOverride() {
-  var obsnObject = new observingWrapper.__.ObservableObject({p:'foo', f: new 
-    Function});
-  var observer = new observingWrapper.__.Observer;
+!function testObservation() {
+  var obsnObject = new observingWrapper.__constructor({p:'foo', f: new Function});
+  var ole = obsnObject.observingKeys;
   var i=0;
 
-  observer.add(obsnObject, function(propertyName, propertyValue) {
+  obsnObject.addChangeHandler(function(propertyName, propertyValue) {
     propertyName === 'p' && propertyValue === 'foo0' && i++;
     propertyName === 'f' && propertyValue[0] === 'foo1' && propertyValue[1] 
       === 'foo2' && i++;
     propertyName === 'f' && propertyValue === 'foo3' && i++; 
   });
 
-  obsnObject.p = 'foo0';
-  obsnObject.f('foo1', 'foo2');
-  obsnObject.f='foo3';
+  ole.p = 'foo0';
+  ole.f('foo1', 'foo2');
+  ole.f='foo3';
 
   outputResult(i === 3, 'Observation works', 'Observation failed');
 }()
@@ -34,25 +33,25 @@ function outputResult(condition, trueMessage, falseMessage)
   ff.prototype = {p0:'foo0'};
 
   var objectWithPrototype = new ff;
-  var obsnObject = new observingWrapper.__.ObservableObject(objectWithPrototype);
+  var obsnObject = new observingWrapper.__constructor(objectWithPrototype);
 
-  outputResult(obsnObject.p0, 'Prototyping works', 'Prototyping failed');
+  outputResult(obsnObject.observingKeys.p0, 'Prototyping works', 'Prototyping failed');
 }()
 
 !function testArray() {
-  var obsnObject = new observingWrapper.__.ObservableObject([]);
-  var observer = new observingWrapper.__.Observer;
+  var obsnObject = new observingWrapper.__constructor([]);
+  var ole = obsnObject.observingKeys;
   var i = 0;
-  observer.add(obsnObject, function(methodName, args, result) {
+  obsnObject.addChangeHandler(function(methodName, args, result) {
     if (['push','splice'].indexOf(methodName)>-1)
       i++;
   });
 
-  obsnObject.push(1);
-  obsnObject.push(2);
-  obsnObject.splice(0,1);
-  
-  outputResult(i === 3 && obsnObject.length===1 && obsnObject[0]===2, 'Arrays work', 'Arrays failed');
+  ole.push(1);
+  ole.push(2);
+  ole.splice(0,1);
+
+  outputResult(i === 3 && ole.length===1 && ole[0]===2, 'Arrays work', 'Arrays failed');
 }()
 
 !function testObservingWrapper() {
@@ -73,22 +72,21 @@ function outputResult(condition, trueMessage, falseMessage)
 
 !function testRemoving() {
   var i = 0;
-  var obsnObject = new observingWrapper.__.ObservableObject({p:''});
-  var observer = new observingWrapper.__.Observer;
+  var obsnObject = new observingWrapper.__constructor({p:''});
 
   !function() {
     function f1(k,v) {i++;};
-    observer.add(obsnObject, f1);
+    obsnObject.addChangeHandler(f1);
   }()
   !function() {
     function f1(k,v) {i++;};
-    observer.remove(obsnObject, f1);
-    observer.add(obsnObject, f1);
-    obsnObject.p = 'foo1';
-    observer.remove(obsnObject, f1);
-    obsnObject.p = 'foo2';
+    obsnObject.removeChangeHandler(f1);
+    obsnObject.addChangeHandler(f1);
+    obsnObject.observingKeys.p = 'foo1';
+    obsnObject.removeChangeHandler(f1);
+    obsnObject.observingKeys.p = 'foo2';
   }()
-
+  
   outputResult(i===5, 'Removing works', 'Removing failed');
 }()
 
