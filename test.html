@@ -90,6 +90,27 @@ function outputResult(condition, trueMessage, falseMessage)
   outputResult(i===5, 'Removing works', 'Removing failed');
 }()
 
+!function testFiltering() {
+  var obsnObject = new observingWrapper.__constructor({p1:1, p2:2});
+  var ole = obsnObject.observingKeys;
+  var i=0;
+  
+  function f(propertyValue) {
+    i++;
+  }
+
+  obsnObject.addChangeHandler({p1:f});
+  obsnObject.addChangeHandler({p1:f});
+
+  ole.p1=3;
+  ole.p2=4;
+
+  obsnObject.removeChangeHandler({p1:f});
+  ole.p1=5;
+
+  outputResult(i === 2, 'Filtering works', 'Filtering failed');
+}()
+
 document.close(); 
 
 </script></head><body></body></html>
