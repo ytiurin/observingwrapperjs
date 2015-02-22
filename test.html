@@ -99,13 +99,13 @@ function outputResult(condition, trueMessage, falseMessage)
     i++;
   }
 
-  obsnObject.addChangeHandler({p1:f});
-  obsnObject.addChangeHandler({p1:f});
+  obsnObject.addChangeHandler('p1',f);
+  obsnObject.addChangeHandler('p1',f);
 
   ole.p1=3;
   ole.p2=4;
 
-  obsnObject.removeChangeHandler({p1:f});
+  obsnObject.removeChangeHandler('p1',f);
   ole.p1=5;
 
   outputResult(i === 2, 'Filtering works', 'Filtering failed');

@@ -1,11 +1,11 @@
 /*
- * Observing wrapper v0.2.1
+ * Observing wrapper v0.2.2
  * https://github.com/ytiurin/observingwrapperjs
  *
  * Copyright (c) 2015 Yevhen Tiurin
  * Licensed under MIT (https://github.com/ytiurin/observingwrapperjs/blob/master/LICENSE)
  *
- * February 2, 2015
+ * February 25, 2015
  */
 
 !function(window){
@@ -48,26 +48,35 @@
     this.defineObservableProperties();
   }
 
-  ObservingWrapper.prototype.addChangeHandler=function(userChangeHandler){
-    var key;
+  ObservingWrapper.prototype.addChangeHandler=function(){
+    var key,userPropertyName,userChangeHandler;
 
-    if(typeof userChangeHandler==='function'){
+    if(['string','number'].indexOf(typeof arguments[0])>-1 && typeof arguments
+      [1]==='function')
+    {
+      userPropertyName=arguments[0];
+      userChangeHandler=arguments[1];
+    }
+    else
+      userChangeHandler=arguments[0];
+
+    if(userPropertyName){
+      this.specificHandlers[userPropertyName]||(this.specificHandlers[
+        userPropertyName]=[]);
+      if(this.specificHandlers[userPropertyName].indexOf(userChangeHandler)===-1)
+      {
+        this.specificHandlers[userPropertyName].push(userChangeHandler);
+        typeof this.sourceObject[userPropertyName]!=='function'&&
+          userChangeHandler.call(this.sourceObject,this.sourceObject[
+          userPropertyName]);
+      }
+    }
+    else{
       this.changeHandlers.indexOf(userChangeHandler)===-1&&this.changeHandlers
         .push(userChangeHandler);
       for(key in this.observingKeys)
         typeof this.sourceObject[key]!=='function'&&userChangeHandler.call(this.
           sourceObject,key,this.sourceObject[key]);
-    }
-    else if(Object.prototype.toString.call(userChangeHandler)===
-      "[object Object]"){
-      for(key in userChangeHandler){
-        this.specificHandlers[key]||(this.specificHandlers[key]=[]);
-        if(this.specificHandlers[key].indexOf(userChangeHandler[key])===-1){
-          this.specificHandlers[key].push(userChangeHandler[key]);
-          typeof this.sourceObject[key]!=='function'&&userChangeHandler[key].
-            call(this.sourceObject,this.sourceObject[key]);
-        }
-      }
     }
   }
 
@@ -126,23 +135,30 @@
       this.changeHandlers[i].apply(this.sourceObject,arguments);
   }
 
-  ObservingWrapper.prototype.removeChangeHandler = function(userChangeHandler) {
-    var rmInd,key;
+  ObservingWrapper.prototype.removeChangeHandler = function() {
+    var rmInd,key,userPropertyName,userChangeHandler;
 
-    if(typeof userChangeHandler==='function'){
+    if(['string','number'].indexOf(typeof arguments[0])>-1 && typeof arguments
+      [1]==='function')
+    {
+      userPropertyName=arguments[0];
+      userChangeHandler=arguments[1];
+    }
+    else
+      userChangeHandler=arguments[0];
+
+    if(userPropertyName){
+      this.specificHandlers[userPropertyName]&&(rmInd=this.specificHandlers[
+        userPropertyName].indexOf(userChangeHandler))>-1&&this.specificHandlers[
+        userPropertyName].splice(rmInd,1);
+    }
+    else{
       (rmInd=this.changeHandlers.indexOf(userChangeHandler))>-1&&this.
         changeHandlers.splice(rmInd,1);
 
       for(key in this.specificHandlers)
         (rmInd=this.specificHandlers[key].indexOf(userChangeHandler))>-1&&this.
           specificHandlers[key].splice(rmInd,1);
-    }
-    else if(Object.prototype.toString.call(userChangeHandler)===
-      "[object Object]"){
-      for(key in userChangeHandler)
-        this.specificHandlers[key]&&(rmInd=this.specificHandlers[key].indexOf(
-          userChangeHandler[key]))>-1&&this.specificHandlers[key].splice(rmInd,1
-          );
     }
   }
 
@@ -161,10 +177,13 @@
 
   function observingWrapper(userObject, userChangeHandler)
   {
-    var owInstance = userObject && userObject.__observingWrapper ? userObject.
-      __observingWrapper : new ObservingWrapper(userObject);
+    var owInstance=arguments[0]&&arguments[0].__observingWrapper;
 
-    userChangeHandler && owInstance.addChangeHandler(userChangeHandler);
+    if(!owInstance)
+      owInstance=new ObservingWrapper(arguments[0]||{});
+
+    if(arguments[1])
+      owInstance.addChangeHandler(arguments[1],arguments[2]);
 
     return owInstance.observingKeys;
   }
