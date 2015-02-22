@@ -78,7 +78,7 @@
   }
 
   ObservingWrapper.prototype.defineObservableProperty = function(propertyName) {
-    var ow=this;
+    var ow=this,isEnum=typeof this.sourceObject[propertyName]!=='function';
 
     function get() {
       return ow.getPropertyValue(propertyName);
@@ -87,8 +87,8 @@
     function set(userValue) {
       ow.setPropertyValue(propertyName, userValue);
     }
-
-    Object.defineProperty(this.observingKeys, propertyName, {enumerable:true, 
+    
+    Object.defineProperty(this.observingKeys, propertyName, {enumerable:isEnum, 
       configurable:true, get:get, set:set});
   }
 
