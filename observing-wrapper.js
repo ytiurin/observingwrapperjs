@@ -60,7 +60,7 @@
     else
       userChangeHandler=arguments[0];
 
-    if(userPropertyName){
+    if(userPropertyName!==undefined){
       this.specificHandlers[userPropertyName]||(this.specificHandlers[
         userPropertyName]=[]);
       if(this.specificHandlers[userPropertyName].indexOf(userChangeHandler)===-1)
@@ -147,7 +147,7 @@
     else
       userChangeHandler=arguments[0];
 
-    if(userPropertyName){
+    if(userPropertyName!==undefined){
       this.specificHandlers[userPropertyName]&&(rmInd=this.specificHandlers[
         userPropertyName].indexOf(userChangeHandler))>-1&&this.specificHandlers[
         userPropertyName].splice(rmInd,1);
@@ -182,7 +182,7 @@
     if(!owInstance)
       owInstance=new ObservingWrapper(arguments[0]||{});
 
-    if(arguments[1])
+    if(arguments[1]!==undefined)
       owInstance.addChangeHandler(arguments[1],arguments[2]);
 
     return owInstance.observingKeys;
