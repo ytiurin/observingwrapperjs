@@ -63,19 +63,36 @@ function nodeRemove(node) {
 
 function bindPropertyToElement(modelPath,bindParams)
 {
-  c('V',modelPath,bindParams) 
+  c('bindPropertyToElement',{modelPath:modelPath.slice(0),bindParams:bindParams})
   var a=modelPath.slice(0),p=modelPath.pop();
   
-  var el=copyElement(bindParams.blankElement);
-  nodeInsertAfter(bindParams.anchorElement,el);
-  // nodeRemove(bindParams.anchorElement);
-  bindParams.anchorElement=el;
-
   for(var b=bindParams.bindingPaths.length;b--;)
     byPath(viewModel,a,observingWrapper(byPath(viewModel,modelPath),p,
       function(propertyValue){
-        byPath(el,bindParams.bindingPaths[b],propertyValue);
+        byPath(bindParams.anchorElement,bindParams.bindingPaths[b],propertyValue);
       }));
+}
+
+function bindProperties(modelPath,bindableElements)
+{
+  for(var r=bindableElements.length;r--;)
+    bindPropertyToElement(modelPath,bindableElements[r]);
+}
+
+function bindElements(modelPath,bindableElements)
+{ 
+  c('bindElements',{modelPath:modelPath,bindableElements:bindableElements})
+  
+  if(typeof byPath(viewModel,modelPath)==='object'){
+//     for(var e in viewModel[s][b])
+//       if(bindableElements[s+':'+e]){
+//   c(s+':'+e,bindableElements[s+':'+e])
+//         bindProperties([s,b,e],bindableElements[s+':'+e]);
+//       }
+  }
+  else {
+    bindProperties(modelPath,bindableElements[modelPath[0]]);
+  }
 }
 
 function byPath(obj,path,value)
@@ -125,19 +142,6 @@ function findBindingPaths(node,placeholder,nodePaths,pathPrefix)
   return nodePaths;
 }
 
-function copyElement(el)
-{
-  var a,b,c;
-
-  a=el.cloneNode(true);
-  for(b=a.attributes.length;b--;)
-    if(a.attributes.item(b).name.indexOf('bb-')===0){
-      a.attributes.removeNamedItem(a.attributes.item(b).name);
-    }
-  
-  return a;
-}
-
 function findBindableElements()
 {
   var a,b,c,d,e,f;
@@ -148,12 +152,13 @@ function findBindableElements()
   for(c=b.length;c--;)
     for(d=b[c].attributes.length;d--;)
       if(b[c].attributes[d].name.indexOf('bb-')===0){
-        e=copyElement(b[c]);
         f=b[c].attributes[d].name.substring(3);
         a[f]=a[f]||[];
-        a[f].push({'anchorElement':b[c],'blankElement':e,'placeholder':
-          b[c].attributes[d].value,'bindingPaths':findBindingPaths(e,
+        a[f].push({'anchorElement':b[c],'placeholder':
+          b[c].attributes[d].value,'bindingPaths':findBindingPaths(b[c],
           b[c].attributes[d].value)});
+
+        b[c].attributes.removeNamedItem(b[c].attributes.item(d).name);
       }
 
   return a;
@@ -169,8 +174,9 @@ function main()
   for(var s in viewModel)
     if(Array.isArray(viewModel[s]))
       for(var b=0,d=viewModel[s].length;b<d;b++)
-        for(var r=bindableElements[s].length;r--;)
-          bindPropertyToElement([s,b],bindableElements[s][r]);
+        bindElements([s,b],bindableElements);
+    else
+      bindElements([s],bindableElements);
 
   // for(a=bindableElements.length;a--;)
   //   bindElementToModel(bindableElements[a]);
