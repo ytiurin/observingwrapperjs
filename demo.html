@@ -14,81 +14,51 @@ viewModel=observingWrapper({
 function nodeInsertAfter(referenceNode, newNode) {
   referenceNode.parentNode.insertBefore(newNode,referenceNode.nextSibling);
 }
-function nodeRemove(node) {
-  node.parentNode.removeChild(node);
+
+function bindModelPropertyToElement(modelPath,element,valuePath)
+{
+  var
+  a=modelPath.slice(0,-1),b=modelPath.slice(-1)[0],
+  c=observingWrapper(byPath(viewModel,a),b,function(propertyValue){
+    byPath(element,valuePath,propertyValue);
+  });
+  
+  byPath(viewModel,a,c);
 }
-
-// function bindNodeToArrayModel(nodeParams,modelName,i)
-// {
-//   console.log('bindNodeToArrayModel',{nodeParams:nodeParams,modelName:modelName,i:i})
-  
-//   var bindParams={};
-//   bindParams[i]=function(propertyValue){
-//     byPath(nodeParams.node,nodeParams.path,propertyValue);
-//   };
-
-//   viewModel[modelName]=observingWrapper(viewModel[modelName],bindParams);
-// }
-
-// function bindNodeToModel(nodeParams,modelName,placeholder)
-// {
-//   console.log('bindNodeToModel',{nodeParams:nodeParams,modelName:modelName,placeholder:placeholder})
-  
-//   var bindParams={};
-//   bindParams[modelName]=function(propertyValue){
-//     byPath(nodeParams.node,nodeParams.path,propertyValue);
-//   };
-
-//   observingWrapper(viewModel,bindParams);
-// }
-
-// function bindElementToModel(params)
-// {
-//   var a,b,d,el,nodes;
-
-//   if(Array.isArray(viewModel[params.name]))
-//     for(a=0,d=viewModel[params.name].length;a<d;a++){
-//       el=params.blankElement.cloneNode(true);
-//       params.anchorElement.parentNode.insertBefore(el,params.anchorElement);
-//       nodes=findBindingNodesOrCreate(el,params.placeholder);
-//       c(nodes);
-//       for(b=nodes.length;b--;)
-//         // bindNodeToArrayModel(params.nodes[b],params.name,a);
-//         bindNodeToArrayModel(nodes[b],params.name,a);
-//     }
-//   else
-//     for(a=params.nodes.length;a--;)
-//       bindNodeToModel(params.nodes[a],params.name,params.placeholder);
-// }
 
 function bindPropertyToElement(modelPath,bindParams)
 {
   c('bindPropertyToElement',{modelPath:modelPath.slice(0),bindParams:bindParams})
-  var a=modelPath.slice(0),p=modelPath.pop();
+  var ae=bindParams.anchorElement;
+
+  if(typeof modelPath[1]==='number'&&modelPath[1]>0){
+    ae=ae.cloneNode(true);
+    nodeInsertAfter(bindParams.anchorElement,ae);
+    bindParams.anchorElement=ae;
+  }
   
   for(var b=bindParams.bindingPaths.length;b--;)
-    byPath(viewModel,a,observingWrapper(byPath(viewModel,modelPath),p,
-      function(propertyValue){
-        byPath(bindParams.anchorElement,bindParams.bindingPaths[b],propertyValue);
-      }));
+    bindModelPropertyToElement(modelPath,ae,bindParams.bindingPaths[b]);
 }
 
 function bindProperties(modelPath,bindableElements)
 {
   for(var r=bindableElements.length;r--;)
-    bindPropertyToElement(modelPath,bindableElements[r]);
+    bindPropertyToElement(modelPath,bindableElements[r],r);
 }
 
 function bindElements(modelPath,bindableElements)
 { 
   c('bindElements',{modelPath:modelPath,bindableElements:bindableElements})
-  
-  if(typeof byPath(viewModel,modelPath)==='object'){
-//     for(var e in viewModel[s][b])
-//       if(bindableElements[s+':'+e]){
-//   c(s+':'+e,bindableElements[s+':'+e])
-//         bindProperties([s,b,e],bindableElements[s+':'+e]);
-//       }
+  var vmp=byPath(viewModel,modelPath);
+
+  if(typeof vmp==='object'){
+    var s=modelPath[0];
+    for(var e in vmp)
+      if(bindableElements[s+':'+e]){
+  // c(s+':'+e,bindableElements[s+':'+e])
+        bindProperties(modelPath.concat(e),bindableElements[s+':'+e]);
+      }
   }
   else {
     bindProperties(modelPath,bindableElements[modelPath[0]]);
@@ -98,7 +68,10 @@ function bindElements(modelPath,bindableElements)
 function byPath(obj,path,value)
 {
   var a,b;
-  // console.log('byPath',{obj:obj,path:path,value:value})
+  // c('byPath',{obj:obj,path:path,value:value})
+  
+  if(path.length===0)
+    return obj;
 
   a=path.length-1;
   for(b=0;b<a;b++)
@@ -125,7 +98,7 @@ function findBindingPaths(node,placeholder,nodePaths,pathPrefix)
   [['nodeValue'],['value']]
     .forEach(function(path){
       var value=byPath(node,path);
-      if(typeof value==='string'&&((placeholder&&value.indexOf(placeholder)>-1)||true)){
+      if(typeof value==='string'&&(placeholder?value.indexOf(placeholder)>-1:true)){
         nodePaths.push(pathPrefix.concat(path));
         byPath(node,path,'');
       }
@@ -169,25 +142,17 @@ function main()
   var bindableElements,a;
 
   bindableElements=findBindableElements();
-  console.log('bindableElements',bindableElements);
+  c('bindableElements',bindableElements);
+  c('1=======================================================================');
 
-  for(var s in viewModel)
+  for(var s in viewModel){
+    c('/',s)
     if(Array.isArray(viewModel[s]))
       for(var b=0,d=viewModel[s].length;b<d;b++)
         bindElements([s,b],bindableElements);
     else
       bindElements([s],bindableElements);
-
-  // for(a=bindableElements.length;a--;)
-  //   bindElementToModel(bindableElements[a]);
-
-  // for(a=bindableElements.length;a--;)
-  //   with(bindableElements[a]){
-  //     if((blankElement.tagName==='INPUT'&&blankElement.type==='text')||(blankElement.tagName==='TEXTAREA'))
-  //       blankElement.addEventListener('keyup',function(e){
-  //         viewModel[name]=e.target.value;
-  //       });
-  //   }
+  }
 }
 
 document.addEventListener("DOMContentLoaded",main,false);
@@ -214,14 +179,6 @@ document.addEventListener("DOMContentLoaded",main,false);
 
 <select>
 <option bb-lang:code="en" bb-lang:name="English" value="en">English</option>
-lang:{code:'en',name:'English'}
-lang:[{code:'fr',name:'French'},{code:'nl',name:'Dutch'}]
-<!-- 
-<option value="fr">French</option>
-<option value="nl">Dutch</option>
-[['fr','French'],
- ['nl','Dutch']]
- -->
 </select>
 
 <div bb-site></div>
