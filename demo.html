@@ -15,6 +15,14 @@ function nodeInsertAfter(referenceNode, newNode) {
   referenceNode.parentNode.insertBefore(newNode,referenceNode.nextSibling);
 }
 
+function bindElementPaths2ModelPath(anchorElement,bindingPaths,modelPath)
+{
+  c('bindElementPaths2ModelPath',{anchorElement:anchorElement,bindingPaths:bindingPaths,modelPath:modelPath});
+
+  for(var k=bindingPaths.length;k--;)
+    bindModelPropertyToElement(modelPath,anchorElement,bindingPaths[k]);
+}
+
 function bindModelPropertyToElement(modelPath,element,valuePath)
 {
   var
@@ -24,45 +32,6 @@ function bindModelPropertyToElement(modelPath,element,valuePath)
   });
   
   byPath(viewModel,a,c);
-}
-
-function bindPropertyToElement(modelPath,bindParams)
-{
-  c('bindPropertyToElement',{modelPath:modelPath.slice(0),bindParams:bindParams})
-  var ae=bindParams.anchorElement;
-
-  if(typeof modelPath[1]==='number'&&modelPath[1]>0){
-    ae=ae.cloneNode(true);
-    nodeInsertAfter(bindParams.anchorElement,ae);
-    bindParams.anchorElement=ae;
-  }
-  
-  for(var b=bindParams.bindingPaths.length;b--;)
-    bindModelPropertyToElement(modelPath,ae,bindParams.bindingPaths[b]);
-}
-
-function bindProperties(modelPath,bindableElements)
-{
-  for(var r=bindableElements.length;r--;)
-    bindPropertyToElement(modelPath,bindableElements[r],r);
-}
-
-function bindElements(modelPath,bindableElements)
-{ 
-  c('bindElements',{modelPath:modelPath,bindableElements:bindableElements})
-  var vmp=byPath(viewModel,modelPath);
-
-  if(typeof vmp==='object'){
-    var s=modelPath[0];
-    for(var e in vmp)
-      if(bindableElements[s+':'+e]){
-  // c(s+':'+e,bindableElements[s+':'+e])
-        bindProperties(modelPath.concat(e),bindableElements[s+':'+e]);
-      }
-  }
-  else {
-    bindProperties(modelPath,bindableElements[modelPath[0]]);
-  }
 }
 
 function byPath(obj,path,value)
@@ -100,7 +69,7 @@ function findBindingPaths(node,placeholder,nodePaths,pathPrefix)
       var value=byPath(node,path);
       if(typeof value==='string'&&(placeholder?value.indexOf(placeholder)>-1:true)){
         nodePaths.push(pathPrefix.concat(path));
-        byPath(node,path,'');
+        // byPath(node,path,'');
       }
       else if(value===undefined&&!placeholder){
         addTextNode(node);
@@ -115,23 +84,28 @@ function findBindingPaths(node,placeholder,nodePaths,pathPrefix)
   return nodePaths;
 }
 
-function findBindableElements()
+function collectBindableElements()
 {
-  var a,b,c,d,e,f;
+  var a,b,c,d,e,f,g;
 
-  a={};
+  a=[];
+  g=[];
   b=document.body.getElementsByTagName('*');
 
   for(c=b.length;c--;)
     for(d=b[c].attributes.length;d--;)
       if(b[c].attributes[d].name.indexOf('bb-')===0){
-        f=b[c].attributes[d].name.substring(3);
-        a[f]=a[f]||[];
-        a[f].push({'anchorElement':b[c],'placeholder':
-          b[c].attributes[d].value,'bindingPaths':findBindingPaths(b[c],
+        f=b[c].attributes[d].name.substring(3).split(':');
+        
+        if((e=g.indexOf(b[c]))===-1){
+          g.push(b[c]);
+          e=a.push({anchorElement:b[c],bindingData:[]})-1;
+        }
+        
+        a[e].bindingData.push({modelPath:f,bindingPaths:findBindingPaths(b[c],
           b[c].attributes[d].value)});
 
-        b[c].attributes.removeNamedItem(b[c].attributes.item(d).name);
+        // b[c].attributes.removeNamedItem(b[c].attributes.item(d).name);
       }
 
   return a;
@@ -141,18 +115,40 @@ function main()
 {
   var bindableElements,a;
 
-  bindableElements=findBindableElements();
+  bindableElements=collectBindableElements();
   c('bindableElements',bindableElements);
   c('1=======================================================================');
 
-  for(var s in viewModel){
-    c('/',s)
-    if(Array.isArray(viewModel[s]))
-      for(var b=0,d=viewModel[s].length;b<d;b++)
-        bindElements([s,b],bindableElements);
-    else
-      bindElements([s],bindableElements);
+  for(var l=bindableElements.length;l--;){
+    var anchorElements=[bindableElements[l].anchorElement];
+    var w=Math.max.apply(Math,bindableElements[l].bindingData.map(function(k){
+      var u=viewModel[k.modelPath[0]];
+      return (u&&Array.isArray(u)&&u.length)||0;
+    }));
+
+    if(w>1)
+      for(var q=0;q<w-1;q++){c(q-1)
+        var f=anchorElements[q].cloneNode(true);
+        nodeInsertAfter(anchorElements[q],f);
+        anchorElements.push(f);
+      }
+     
+    for(var o=bindableElements[l].bindingData.length;o--;){
+      var bindingPaths=bindableElements[l].bindingData[o].bindingPaths;
+      var userModelPath=bindableElements[l].bindingData[o].modelPath;
+
+      if(Array.isArray(viewModel[userModelPath[0]]))
+        for(var j=viewModel[userModelPath[0]].length;j--;){
+          var modelPath=userModelPath.slice();
+          modelPath.splice(1,0,j);
+          bindElementPaths2ModelPath(anchorElements[j],bindingPaths,modelPath);
+        }
+      
+      else
+        bindElementPaths2ModelPath(anchorElements[0],bindingPaths,userModelPath);
+    }
   }
+
 }
 
 document.addEventListener("DOMContentLoaded",main,false);
