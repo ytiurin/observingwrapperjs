@@ -10,6 +10,8 @@
 
 !function(window){
 
+  'use strict';
+
   !function checkECMAScript51Features()
   {
     ['defineProperty','getPrototypeOf','getOwnPropertyNames'].forEach(
@@ -121,7 +123,7 @@
   }
 
   ObservingWrapper.prototype.notifyObservers = function() {
-    var specificHandlers,i;
+    var specificHandlers,i,n;
     
     function reduceArgs(args){
       return Array.prototype.slice.call(args,1);
