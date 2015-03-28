@@ -1,4 +1,4 @@
-ObservingWrapper.js
+observing-wrapper.js
 ==================
 
-Data bind booster.
+A data bind booster.
