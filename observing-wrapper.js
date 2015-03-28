@@ -50,6 +50,12 @@
     this.defineObservableProperties();
   }
 
+  ObservingWrapper.getSourceObject = function(obj) {
+    if(obj.__observingWrapper)
+      return obj.__observingWrapper.sourceObject;
+    return obj;
+  }
+
   ObservingWrapper.prototype.addChangeHandler=function(){
     var key,userPropertyName,userChangeHandler;
 
