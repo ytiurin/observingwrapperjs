@@ -1,11 +1,11 @@
 /*
- * Observing wrapper v0.3.1
+ * Observing wrapper v0.4
  * https://github.com/ytiurin/observingwrapperjs
  *
  * Copyright (c) 2014 Yevhen Tiurin
  * Licensed under MIT (https://github.com/ytiurin/observingwrapperjs/blob/master/LICENSE)
  *
- * March 28, 2015
+ * March 30, 2015
  */
 
 !function(window){
@@ -42,11 +42,11 @@
   function ObservingWrapper(sourceObject,initHandler)
   {
     this.sourceObject=sourceObject||undefined;
-    this.observingKeys={};
+    this.observableKeys={};
     this.changeHandlers=[];
     this.specificHandlers={};
 
-    Object.defineProperty(this.observingKeys,'__observingWrapper',{value:this});
+    Object.defineProperty(this.observableKeys,'__observingWrapper',{value:this});
     this.defineObservableProperties();
   }
 
@@ -82,14 +82,15 @@
     else{
       this.changeHandlers.indexOf(userChangeHandler)===-1&&this.changeHandlers
         .push(userChangeHandler);
-      for(key in this.observingKeys)
+      for(key in this.observableKeys)
         typeof this.sourceObject[key]!=='function'&&userChangeHandler.call(this.
-          sourceObject,key,this.sourceObject[key]);
+          observableKeys,[{name:key,object:this.observableKeys,type:'update',
+          oldValue:this.sourceObject[key]}]);
     }
   }
 
   ObservingWrapper.prototype.defineObservableProperties = function() {
-    for(var propertyNames=getDeepPropertyNames(this.sourceObject,this.observingKeys),
+    for(var propertyNames=getDeepPropertyNames(this.sourceObject,this.observableKeys),
       i=0,n=propertyNames.length; i<n; i++)
       this.defineObservableProperty(propertyNames[i]);
   }
@@ -105,42 +106,43 @@
       ow.setPropertyValue(propertyName, userValue);
     }
     
-    Object.defineProperty(this.observingKeys, propertyName, {enumerable:isEnum, 
+    Object.defineProperty(this.observableKeys, propertyName, {enumerable:isEnum, 
       configurable:true, get:get, set:set});
   }
 
-  ObservingWrapper.prototype.getPropertyValue = function(propertyName) {
+  ObservingWrapper.prototype.getPropertyValue=function(propertyName){
     var ow=this;
-    return typeof this.sourceObject[propertyName] !== 'function' ? this.
-      sourceObject[propertyName] : function() {
-        var
-        length=ow.sourceObject.length,
-        result=ow.sourceObject[propertyName].apply(ow.sourceObject,arguments);
+    return typeof this.sourceObject[propertyName]!=='function'
+      ? this.sourceObject[propertyName] 
+      : function(){
+          var
+          length=ow.sourceObject.length,
+          result=ow.sourceObject[propertyName].apply(ow.sourceObject,arguments);
 
-        if(length&&length!==ow.sourceObject.length) {
-          ow.undefineObservableProperties();
-          ow.defineObservableProperties();
-        }
+          if(length&&length!==ow.sourceObject.length)
+            ow.undefineObservableProperties(),
+            ow.defineObservableProperties();
 
-        ow.notifyObservers(propertyName,arguments,result);
+          ow.notifyObservers([{name:propertyName,object:ow.observableKeys,type:
+            'call',arguments:arguments,result:result}]);
 
-        return result;
-      };
+          return result;
+        };
   }
 
-  ObservingWrapper.prototype.notifyObservers = function() {
+  ObservingWrapper.prototype.notifyObservers=function(changes){
     var specificHandlers,i,n;
     
-    function reduceArgs(args){
-      return Array.prototype.slice.call(args,1);
-    }
+    // function reduceArgs(args){
+    //   return Array.prototype.slice.call(args,1);
+    // }
 
-    if(specificHandlers=this.specificHandlers[arguments[0]])
+    if(specificHandlers=this.specificHandlers[changes[0].name])
       for(i=0,n=specificHandlers.length;i<n;i++)
-        specificHandlers[i].apply(this.sourceObject,reduceArgs(arguments));
+        specificHandlers[i].call(this.observingKeys,changes);
 
     for(i=0,n=this.changeHandlers.length;i<n;i++)
-      this.changeHandlers[i].apply(this.sourceObject,arguments);
+      this.changeHandlers[i].call(this.observingKeys,changes);
   }
 
   ObservingWrapper.prototype.removeChangeHandler = function() {
@@ -170,17 +172,21 @@
     }
   }
 
-  ObservingWrapper.prototype.setPropertyValue = function(propertyName,propertyValue) {
-    if (this.sourceObject[propertyName] !== propertyValue) {
-      this.sourceObject[propertyName] = propertyValue;
-      this.notifyObservers(propertyName, propertyValue);
+  ObservingWrapper.prototype.setPropertyValue=function(propertyName,
+    propertyValue){var oldValue;
+
+    if(this.sourceObject[propertyName]!==propertyValue){
+      oldValue=this.sourceObject[propertyName];
+      this.sourceObject[propertyName]=propertyValue;
+      this.notifyObservers([{name:propertyName,object:this.sourceObject,type:
+        'update',oldValue:oldValue}]);
     }
   }
 
   ObservingWrapper.prototype.undefineObservableProperties = function() {
-    for(var propertyNames=getDeepPropertyNames(this.observingKeys),i=0,n=
+    for(var propertyNames=getDeepPropertyNames(this.observableKeys),i=0,n=
       propertyNames.length; i<n; i++)
-      delete this.observingKeys[i];
+      delete this.observableKeys[i];
   }
 
   function observingWrapper(userObject, userChangeHandler)
@@ -193,13 +199,13 @@
     if(arguments[1]!==undefined)
       owInstance.addChangeHandler(arguments[1],arguments[2]);
 
-    return owInstance.observingKeys;
+    return owInstance.observableKeys;
   }
 
   observingWrapper.__constructor = ObservingWrapper;
 
-  observingWrapper.remove = function(userObservingKeys,userChangeHandler) {
-    var ow=userObservingKeys.__observingWrapper;
+  observingWrapper.remove = function(userobservableKeys,userChangeHandler) {
+    var ow=userobservableKeys.__observingWrapper;
 
     if (userChangeHandler)
       ow.removeChangeHandler(userChangeHandler);
