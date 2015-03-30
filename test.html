@@ -47,15 +47,15 @@ function outputResult(condition, trueMessage, falseMessage)
   var ole = obsnObject.observableKeys;
   var i = 0;
   obsnObject.addChangeHandler(function(changes){
-    if(['push','splice'].indexOf(changes[0].name)>-1)
+    if(changes[0].type==='splice')
       i++;
   });
 
   ole.push(1);
   ole.push(2);
-  ole.splice(0,1);
+  ole.splice(0,1,'3','4');
 
-  outputResult(i === 3 && ole.length===1 && ole[0]===2, 'Arrays work', 'Arrays failed');
+  outputResult(i === 3 && ole.length===3 && ole[2]===2, 'Arrays work', 'Arrays failed');
 }()
 
 !function testObservingWrapper() {

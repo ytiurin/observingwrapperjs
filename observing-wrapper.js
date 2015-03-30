@@ -20,6 +20,11 @@
           throw 'Object.'+method+' method does not exist. ObservingWrapper will not work.';
       });
   }()
+    
+  function cropArgs(args,n)
+  {
+    return Array.prototype.slice.call(args,n);
+  }
 
   function getDeepPropertyNames(obj)
   {
@@ -114,28 +119,34 @@
     var ow=this;
     return typeof this.sourceObject[propertyName]!=='function'
       ? this.sourceObject[propertyName] 
-      : function(){
-          var
-          length=ow.sourceObject.length,
-          result=ow.sourceObject[propertyName].apply(ow.sourceObject,arguments);
+      : function(){var len,ok,res,changes;
 
-          if(length&&length!==ow.sourceObject.length)
+          len=ow.sourceObject.length,
+          res=ow.sourceObject[propertyName].apply(ow.sourceObject,arguments);
+
+          if(len&&len!==ow.sourceObject.length)
             ow.undefineObservableProperties(),
             ow.defineObservableProperties();
 
-          ow.notifyObservers([{name:propertyName,object:ow.observableKeys,type:
-            'call',arguments:arguments,result:result}]);
+          ok=ow.observableKeys,changes=[{name:propertyName,object:ok,type:'call'
+            ,arguments:arguments,result:res}];
+          
+          if(propertyName==='push')
+            changes=[{object:ok,type:'splice',index:ow.sourceObject.length-1,
+              removed:[],addedCount:1}];
+          
+          else if(propertyName==='splice')
+            changes=[{object:ok,type:'splice',index:arguments[0],removed:res,
+              addedCount:cropArgs(arguments,2).length}];
 
-          return result;
+          ow.notifyObservers(changes);
+
+          return res;
         };
   }
 
   ObservingWrapper.prototype.notifyObservers=function(changes){
     var specificHandlers,i,n;
-    
-    // function reduceArgs(args){
-    //   return Array.prototype.slice.call(args,1);
-    // }
 
     if(specificHandlers=this.specificHandlers[changes[0].name])
       for(i=0,n=specificHandlers.length;i<n;i++)
