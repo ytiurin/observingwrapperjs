@@ -80,8 +80,9 @@
       {
         this.specificHandlers[userPropertyName].push(userChangeHandler);
         typeof this.sourceObject[userPropertyName]!=='function'&&
-          userChangeHandler.call(this.sourceObject,this.sourceObject[
-          userPropertyName]);
+          userChangeHandler.call(this.sourceObject,[{name:userPropertyName,
+            object:this.observableKeys,type:'update',oldValue:this.sourceObject
+            [userPropertyName]}]);
       }
     }
     else{
