@@ -151,10 +151,10 @@
 
     if(specificHandlers=this.specificHandlers[changes[0].name])
       for(i=0,n=specificHandlers.length;i<n;i++)
-        specificHandlers[i].call(this.observingKeys,changes);
+        specificHandlers[i].call(this.observableKeys,changes);
 
     for(i=0,n=this.changeHandlers.length;i<n;i++)
-      this.changeHandlers[i].call(this.observingKeys,changes);
+      this.changeHandlers[i].call(this.observableKeys,changes);
   }
 
   ObservingWrapper.prototype.removeChangeHandler = function() {
