@@ -5,7 +5,7 @@
  * Copyright (c) 2014 Yevhen Tiurin
  * Licensed under MIT (https://github.com/ytiurin/observingwrapperjs/blob/master/LICENSE)
  *
- * March 30, 2015
+ * April 16, 2015
  */
 
 !function(window){
@@ -49,7 +49,7 @@
     this.sourceObject=sourceObject||undefined;
     this.observableKeys={};
     this.changeHandlers=[];
-    this.specificHandlers={};
+    this.changes=[];
 
     Object.defineProperty(this.observableKeys,'__observingWrapper',{value:this});
     this.defineObservableProperties();
@@ -61,38 +61,15 @@
     return obj;
   }
 
-  ObservingWrapper.prototype.addChangeHandler=function(){
-    var key,userPropertyName,userChangeHandler;
+  ObservingWrapper.prototype.addChangeHandler=function(userChangeHandler){
+    var key,userChangeHandler;
 
-    if(['string','number'].indexOf(typeof arguments[0])>-1 && typeof arguments
-      [1]==='function')
-    {
-      userPropertyName=arguments[0];
-      userChangeHandler=arguments[1];
-    }
-    else
-      userChangeHandler=arguments[0];
-
-    if(userPropertyName!==undefined){
-      this.specificHandlers[userPropertyName]||(this.specificHandlers[
-        userPropertyName]=[]);
-      if(this.specificHandlers[userPropertyName].indexOf(userChangeHandler)===-1)
-      {
-        this.specificHandlers[userPropertyName].push(userChangeHandler);
-        typeof this.sourceObject[userPropertyName]!=='function'&&
-          userChangeHandler.call(this.sourceObject,[{name:userPropertyName,
-            object:this.observableKeys,type:'update',oldValue:this.sourceObject
-            [userPropertyName]}]);
-      }
-    }
-    else{
-      this.changeHandlers.indexOf(userChangeHandler)===-1&&this.changeHandlers
-        .push(userChangeHandler);
-      for(key in this.observableKeys)
-        typeof this.sourceObject[key]!=='function'&&userChangeHandler.call(this.
-          observableKeys,[{name:key,object:this.observableKeys,type:'update',
-          oldValue:this.sourceObject[key]}]);
-    }
+    this.changeHandlers.indexOf(userChangeHandler)===-1&&this.changeHandlers
+      .push(userChangeHandler);
+    // for(key in this.observableKeys)
+    //   typeof this.sourceObject[key]!=='function'&&userChangeHandler.call(this.
+    //     observableKeys,[{name:key,object:this.observableKeys,type:'update',
+    //     oldValue:this.sourceObject[key]}]);
   }
 
   ObservingWrapper.prototype.defineObservableProperties = function() {
@@ -120,7 +97,7 @@
     var ow=this;
     return typeof this.sourceObject[propertyName]!=='function'
       ? this.sourceObject[propertyName] 
-      : function(){var len,ok,res,changes;
+      : function(){var len,ok,res,change;
 
           len=ow.sourceObject.length,
           res=ow.sourceObject[propertyName].apply(ow.sourceObject,arguments);
@@ -129,69 +106,48 @@
             ow.undefineObservableProperties(),
             ow.defineObservableProperties();
 
-          ok=ow.observableKeys,changes=[{name:propertyName,object:ok,type:'call'
-            ,arguments:arguments,result:res}];
+          ok=ow.observableKeys,change={name:propertyName,object:ok,type:'call'
+            ,arguments:arguments,result:res};
           
           if(propertyName==='push')
-            changes=[{object:ok,type:'splice',index:ow.sourceObject.length-1,
-              removed:[],addedCount:1}];
+            change={object:ok,type:'splice',index:ow.sourceObject.length-1,
+              removed:[],addedCount:1};
           
           else if(propertyName==='splice')
-            changes=[{object:ok,type:'splice',index:arguments[0],removed:res,
-              addedCount:cropArgs(arguments,2).length}];
+            change={object:ok,type:'splice',index:arguments[0],removed:res,
+              addedCount:cropArgs(arguments,2).length};
 
-          ow.notifyObservers(changes);
+          ow.changes.push(change);
+          setTimeout(function(){ow.notifyObservers()});
 
           return res;
         };
   }
 
-  ObservingWrapper.prototype.notifyObservers=function(changes){
-    var specificHandlers,i,n;
+  ObservingWrapper.prototype.notifyObservers=function(){
+    var changes=this.changes.splice(0,this.changes.length);
 
-    if(specificHandlers=this.specificHandlers[changes[0].name])
-      for(i=0,n=specificHandlers.length;i<n;i++)
-        specificHandlers[i].call(this.observableKeys,changes);
-
-    for(i=0,n=this.changeHandlers.length;i<n;i++)
-      this.changeHandlers[i].call(this.observableKeys,changes);
+    if(changes.length)
+      for(var i=0;i<this.changeHandlers.length;i++)
+        this.changeHandlers[i].call(this.observableKeys,changes);
   }
 
-  ObservingWrapper.prototype.removeChangeHandler = function() {
-    var rmInd,key,userPropertyName,userChangeHandler;
-
-    if(['string','number'].indexOf(typeof arguments[0])>-1 && typeof arguments
-      [1]==='function')
-    {
-      userPropertyName=arguments[0];
-      userChangeHandler=arguments[1];
-    }
-    else
-      userChangeHandler=arguments[0];
-
-    if(userPropertyName!==undefined){
-      this.specificHandlers[userPropertyName]&&(rmInd=this.specificHandlers[
-        userPropertyName].indexOf(userChangeHandler))>-1&&this.specificHandlers[
-        userPropertyName].splice(rmInd,1);
-    }
-    else{
-      (rmInd=this.changeHandlers.indexOf(userChangeHandler))>-1&&this.
-        changeHandlers.splice(rmInd,1);
-
-      for(key in this.specificHandlers)
-        (rmInd=this.specificHandlers[key].indexOf(userChangeHandler))>-1&&this.
-          specificHandlers[key].splice(rmInd,1);
-    }
+  ObservingWrapper.prototype.removeChangeHandler=function(userChangeHandler){
+    var rmInd=this.changeHandlers.indexOf(userChangeHandler);
+    
+    rmInd>-1&&this.changeHandlers.splice(rmInd,1);
   }
 
   ObservingWrapper.prototype.setPropertyValue=function(propertyName,
-    propertyValue){var oldValue;
+    propertyValue){
 
     if(this.sourceObject[propertyName]!==propertyValue){
-      oldValue=this.sourceObject[propertyName];
+      var oldValue=this.sourceObject[propertyName];
       this.sourceObject[propertyName]=propertyValue;
-      this.notifyObservers([{name:propertyName,object:this.sourceObject,type:
-        'update',oldValue:oldValue}]);
+      this.changes.push({name:propertyName,object:this.sourceObject,type:
+        'update',oldValue:oldValue});
+      var ow=this;
+      setTimeout(function(){ow.notifyObservers()});
     }
   }
 
@@ -203,13 +159,13 @@
 
   function observingWrapper(userObject, userChangeHandler)
   {
-    var owInstance=arguments[0]&&arguments[0].__observingWrapper;
+    var owInstance=userObject&&userObject.__observingWrapper;
 
     if(!owInstance)
-      owInstance=new ObservingWrapper(arguments[0]||{});
+      owInstance=new ObservingWrapper(userObject||{});
 
-    if(arguments[1]!==undefined)
-      owInstance.addChangeHandler(arguments[1],arguments[2]);
+    if(userChangeHandler!==undefined)
+      owInstance.addChangeHandler(userChangeHandler);
 
     return owInstance.observableKeys;
   }

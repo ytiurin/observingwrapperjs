@@ -3,10 +3,10 @@
 
 function outputResult(condition, trueMessage, falseMessage)
 {
-  document.open();
+  // document.open();
   condition ? document.write('<p style="color:green">'+trueMessage+'</p>') : 
     document.write('<p style="color:red">'+falseMessage+'</p>');
-  document.close();
+  // document.close();
 }
 
 !function testObservation() {try{
@@ -15,18 +15,23 @@ function outputResult(condition, trueMessage, falseMessage)
   var i=0;
 
   obsnObject.addChangeHandler(function(changes) {
-    var ch=changes[0];
-    ch.name==='p'&&ch.object[ch.name]==='foo0'&&i++;
-    ch.name==='f'&&ch.type==='call'&&ch.arguments[0]==='foo1'&&ch.arguments[1] 
-      ==='foo2'&&i++;
-    ch.name==='f'&&ch.type==='update'&&ch.object[ch.name]==='foo3'&&i++; 
+    var ch;
+    for(var k=0;k<changes.length;k++){
+      ch=changes[k];
+      ch.name==='p'&&ch.object[ch.name]==='foo0'&&i++;
+      ch.name==='f'&&ch.type==='call'&&ch.arguments[0]==='foo1'&&ch.arguments[1] 
+        ==='foo2'&&i++;
+      ch.name==='f'&&ch.type==='update'&&ch.object[ch.name]==='foo3'&&i++; 
+    }
   });
 
   ole.p='foo0';
   ole.f('foo1', 'foo2');
   ole.f='foo3';
-
+  
+setTimeout(function(){
   outputResult(i === 3, 'Observation works', 'Observation failed');
+})
 
 }catch(e){
   outputResult(false, '', 'Observation crashed');
@@ -39,7 +44,10 @@ function outputResult(condition, trueMessage, falseMessage)
   var objectWithPrototype = new ff;
   var obsnObject = new observingWrapper.__constructor(objectWithPrototype);
 
+setTimeout(function(){
   outputResult(obsnObject.observableKeys.p0, 'Prototyping works', 'Prototyping failed');
+})
+
 }()
 
 !function testArray() {
@@ -47,30 +55,39 @@ function outputResult(condition, trueMessage, falseMessage)
   var ole = obsnObject.observableKeys;
   var i = 0;
   obsnObject.addChangeHandler(function(changes){
-    if(changes[0].type==='splice')
-      i++;
+    for(var k=0;k<changes.length;k++)
+      if(changes[k].type==='splice')
+        i++;
   });
 
   ole.push(1);
   ole.push(2);
   ole.splice(0,1,'3','4');
 
+  setTimeout(function(){
   outputResult(i === 3 && ole.length===3 && ole[2]===2, 'Arrays work', 'Arrays failed');
+  })
+
 }()
 
 !function testObservingWrapper() {
   var i=0;
   var obsnObject=observingWrapper({p:'foo',f:new Function},function(changes){
-    var ch=changes[0]
-    ch.name==='p'&&ch.object[ch.name]==='foo0'&&i++;
-    ch.name==='f'&&ch.type==='call'&&ch.arguments[0]==='foo1'&&ch.arguments[1] 
-      ==='foo2'&&i++;
+    var ch;
+    for(var k=0;k<changes.length;k++){
+      ch=changes[k];
+      ch.name==='p'&&ch.object[ch.name]==='foo0'&&i++;
+      ch.name==='f'&&ch.type==='call'&&ch.arguments[0]==='foo1'&&ch.arguments[1] 
+        ==='foo2'&&i++;
+    }
   });
 
   obsnObject.p = 'foo0';
   obsnObject.f('foo1', 'foo2');
   
+  setTimeout(function(){
   outputResult(i === 2, 'Observing wrapper works', 'Observing wrapper failed');
+  })
 }()
 
 !function testRemoving() {
@@ -78,11 +95,11 @@ function outputResult(condition, trueMessage, falseMessage)
   var obsnObject = new observingWrapper.__constructor({p:''});
 
   !function() {
-    function f1(k,v) {i++;};
+    function f1(c) {for(var k=0;k<c.length;k++)i++}
     obsnObject.addChangeHandler(f1);
   }()
   !function() {
-    function f1(k,v) {i++;};
+    function f1(c) {for(var k=0;k<c.length;k++)i++}
     obsnObject.removeChangeHandler(f1);
     obsnObject.addChangeHandler(f1);
     obsnObject.observableKeys.p = 'foo1';
@@ -90,30 +107,13 @@ function outputResult(condition, trueMessage, falseMessage)
     obsnObject.observableKeys.p = 'foo2';
   }()
   
-  outputResult(i===5, 'Removing works', 'Removing failed');
+  setTimeout(function(){
+  outputResult(i===2, 'Removing works', 'Removing failed');
+  })
 }()
 
-!function testFiltering() {
-  var obsnObject = new observingWrapper.__constructor({p1:1, p2:2});
-  var ole = obsnObject.observableKeys;
-  var i=0;
-  
-  function f(changes) {
-    i++;
-  }
-
-  obsnObject.addChangeHandler('p1',f);
-  obsnObject.addChangeHandler('p1',f);
-
-  ole.p1=3;
-  ole.p2=4;
-
-  obsnObject.removeChangeHandler('p1',f);
-  ole.p1=5;
-
-  outputResult(i === 2, 'Filtering works', 'Filtering failed');
-}()
-
+setTimeout(function(){
 document.close(); 
+})
 
 </script></head><body></body></html>
