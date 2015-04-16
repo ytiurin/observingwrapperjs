@@ -61,15 +61,17 @@
     return obj;
   }
 
-  ObservingWrapper.prototype.addChangeHandler=function(userChangeHandler){
-    var key,userChangeHandler;
+  ObservingWrapper.prototype.addChangeHandler=function(userChangeHandler,
+    callOnInit){
 
     this.changeHandlers.indexOf(userChangeHandler)===-1&&this.changeHandlers
       .push(userChangeHandler);
-    // for(key in this.observableKeys)
-    //   typeof this.sourceObject[key]!=='function'&&userChangeHandler.call(this.
-    //     observableKeys,[{name:key,object:this.observableKeys,type:'update',
-    //     oldValue:this.sourceObject[key]}]);
+
+    if(callOnInit||false)
+      for(var key in this.observableKeys)
+        typeof this.sourceObject[key]!=='function'&&userChangeHandler.call(this.
+          observableKeys,[{name:key,object:this.observableKeys,type:'update',
+          oldValue:this.sourceObject[key]}]);
   }
 
   ObservingWrapper.prototype.defineObservableProperties = function() {
@@ -157,7 +159,7 @@
       delete this.observableKeys[i];
   }
 
-  function observingWrapper(userObject, userChangeHandler)
+  function observingWrapper(userObject,userChangeHandler,callOnInit)
   {
     var owInstance=userObject&&userObject.__observingWrapper;
 
@@ -165,7 +167,7 @@
       owInstance=new ObservingWrapper(userObject||{});
 
     if(userChangeHandler!==undefined)
-      owInstance.addChangeHandler(userChangeHandler);
+      owInstance.addChangeHandler(userChangeHandler,callOnInit);
 
     return owInstance.observableKeys;
   }
