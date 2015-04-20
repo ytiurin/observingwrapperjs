@@ -10,7 +10,7 @@ function outputResult(condition, trueMessage, falseMessage)
 }
 
 !function testObservation() {try{
-  var obsnObject = new observingWrapper.__constructor({p:'foo', f: new Function});
+  var obsnObject = new ow.__ObservingWrapper({p:'foo', f: new Function});
   var ole = obsnObject.observableKeys;
   var i=0;
 
@@ -34,6 +34,7 @@ setTimeout(function(){
 })
 
 }catch(e){
+  console.log('Observation crashed',e);
   outputResult(false, '', 'Observation crashed');
 }}()
 
@@ -42,7 +43,7 @@ setTimeout(function(){
   ff.prototype = {p0:'foo0'};
 
   var objectWithPrototype = new ff;
-  var obsnObject = new observingWrapper.__constructor(objectWithPrototype);
+  var obsnObject = new ow.__ObservingWrapper(objectWithPrototype);
 
 setTimeout(function(){
   outputResult(obsnObject.observableKeys.p0, 'Prototyping works', 'Prototyping failed');
@@ -51,7 +52,7 @@ setTimeout(function(){
 }()
 
 !function testArray() {
-  var obsnObject = new observingWrapper.__constructor([]);
+  var obsnObject = new ow.__ObservingWrapper([]);
   var ole = obsnObject.observableKeys;
   var i = 0;
   obsnObject.addChangeHandler(function(changes){
@@ -71,8 +72,10 @@ setTimeout(function(){
 }()
 
 !function testObservingWrapper() {
-  var i=0;
-  var obsnObject=observingWrapper({p:'foo',f:new Function},function(changes){
+  var i=0,s=0;
+  var obj1={p:'foo',f:new Function};
+  var obj2={o:'foo',j:new Function};
+  ow(obj1,function(changes){
     var ch;
     for(var k=0;k<changes.length;k++){
       ch=changes[k];
@@ -82,17 +85,29 @@ setTimeout(function(){
     }
   });
 
-  obsnObject.p = 'foo0';
-  obsnObject.f('foo1', 'foo2');
+  ow(obj2,function(changes){
+    var ch;
+    for(var k=0;k<changes.length;k++){
+      ch=changes[k];
+      ch.name==='o'&&ch.object[ch.name]==='foo0'&&s++;
+      ch.name==='j'&&ch.type==='call'&&ch.arguments[0]==='foo1'&&ch.arguments[1] 
+        ==='foo2'&&s++;
+    }
+  });
+
+  ow(obj1).p = 'foo0';
+  ow(obj2).o = 'foo0';
+  ow(obj1).f('foo1', 'foo2');
+  ow(obj2).j('foo1', 'foo2');
   
   setTimeout(function(){
-  outputResult(i === 2, 'Observing wrapper works', 'Observing wrapper failed');
+  outputResult(i === 2&&s === 2, 'Observing wrapper works', 'Observing wrapper failed');
   })
 }()
 
 !function testRemoving() {
   var i = 0;
-  var obsnObject = new observingWrapper.__constructor({p:''});
+  var obsnObject = new ow.__ObservingWrapper({p:''});
 
   !function() {
     function f1(c) {for(var k=0;k<c.length;k++)i++}

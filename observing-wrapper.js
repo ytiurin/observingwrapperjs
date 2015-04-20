@@ -5,12 +5,11 @@
  * Copyright (c) 2014 Yevhen Tiurin
  * Licensed under MIT (https://github.com/ytiurin/observingwrapperjs/blob/master/LICENSE)
  *
- * April 16, 2015
+ * April 20, 2015
  */
+'use strict';
 
 !function(window){
-
-  'use strict';
 
   !function checkECMAScript51Features()
   {
@@ -44,7 +43,7 @@
     return names;
   }
 
-  function ObservingWrapper(sourceObject,initHandler)
+  function ObservingWrapper(sourceObject)
   {
     this.sourceObject=sourceObject||undefined;
     this.observableKeys={};
@@ -53,12 +52,6 @@
 
     Object.defineProperty(this.observableKeys,'__observingWrapper',{value:this});
     this.defineObservableProperties();
-  }
-
-  ObservingWrapper.getSourceObject = function(obj) {
-    if(obj.__observingWrapper)
-      return obj.__observingWrapper.sourceObject;
-    return obj;
   }
 
   ObservingWrapper.prototype.addChangeHandler=function(userChangeHandler,
@@ -159,31 +152,38 @@
       delete this.observableKeys[i];
   }
 
-  function observingWrapper(userObject,userChangeHandler,callOnInit)
+  function observingWrapper(obj,handler,callOnInit)
   {
-    var owInstance=userObject&&userObject.__observingWrapper;
+    var objWrapper;
 
-    if(!owInstance)
-      owInstance=new ObservingWrapper(userObject||{});
+    if(obj.observableKeys)
+      objWrapper=obj;
+    else
+      for(var i=0;i<this.wrappers.length;i++)
+        if(this.wrappers[i].sourceObject===obj){
+          objWrapper=this.wrappers[i];
+          break;
+        }
 
-    if(userChangeHandler!==undefined)
-      owInstance.addChangeHandler(userChangeHandler,callOnInit);
+    if(!objWrapper)
+      this.wrappers.push(objWrapper=new ObservingWrapper(obj));
 
-    return owInstance.observableKeys;
+    if(handler)
+      objWrapper.addChangeHandler(handler,callOnInit);
+
+    return objWrapper.observableKeys;
   }
 
-  observingWrapper.__constructor = ObservingWrapper;
+  function observingInstance()
+  {
+    this.wrappers=[];
 
-  observingWrapper.remove = function(userobservableKeys,userChangeHandler) {
-    var ow=userobservableKeys.__observingWrapper;
+    var ow=observingWrapper.bind(this);
+    ow.__ObservingWrapper=ObservingWrapper;
 
-    if (userChangeHandler)
-      ow.removeChangeHandler(userChangeHandler);
-    else
-      ow.changeHandlers=[];
-  };
+    return ow;
+  }
 
-  window.define && define(function() {return observingWrapper});
-  window.define === undefined && (window.observingWrapper = observingWrapper);
+  window.ow=new observingInstance();
 
 }(window)
