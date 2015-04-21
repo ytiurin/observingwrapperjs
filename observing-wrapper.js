@@ -5,7 +5,7 @@
  * Copyright (c) 2014 Yevhen Tiurin
  * Licensed under MIT (https://github.com/ytiurin/observingwrapperjs/blob/master/LICENSE)
  *
- * April 20, 2015
+ * April 21, 2015
  */
 'use strict';
 
@@ -92,7 +92,7 @@
     var ow=this;
     return typeof this.sourceObject[propertyName]!=='function'
       ? this.sourceObject[propertyName] 
-      : function(){var len,ok,res,change;
+      : function(){var len,res,change,so;
 
           len=ow.sourceObject.length,
           res=ow.sourceObject[propertyName].apply(ow.sourceObject,arguments);
@@ -101,15 +101,16 @@
             ow.undefineObservableProperties(),
             ow.defineObservableProperties();
 
-          ok=ow.observableKeys,change={name:propertyName,object:ok,type:'call'
-            ,arguments:arguments,result:res};
+          so=ow.sourceObject;
+          change={name:propertyName,object:so,type:'call',arguments:arguments,
+            result:res};
           
           if(propertyName==='push')
-            change={object:ok,type:'splice',index:ow.sourceObject.length-1,
+            change={object:so,type:'splice',index:ow.sourceObject.length-1,
               removed:[],addedCount:1};
           
           else if(propertyName==='splice')
-            change={object:ok,type:'splice',index:arguments[0],removed:res,
+            change={object:so,type:'splice',index:arguments[0],removed:res,
               addedCount:cropArgs(arguments,2).length};
 
           ow.changes.push(change);
@@ -184,6 +185,11 @@
     return ow;
   }
 
-  window.ow=new observingInstance();
+
+  if(window.define)
+    window.define(function() {return new observingInstance()});
+  else
+    window.ow=new observingInstance();
+
 
 }(window)
