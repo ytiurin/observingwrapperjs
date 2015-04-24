@@ -5,7 +5,7 @@
  * Copyright (c) 2014 Yevhen Tiurin
  * Licensed under MIT (https://github.com/ytiurin/observingwrapperjs/blob/master/LICENSE)
  *
- * April 21, 2015
+ * April 24, 2015
  */
 'use strict';
 
@@ -60,11 +60,15 @@
     this.changeHandlers.indexOf(userChangeHandler)===-1&&this.changeHandlers
       .push(userChangeHandler);
 
-    if(callOnInit||false)
-      for(var key in this.observableKeys)
-        typeof this.sourceObject[key]!=='function'&&userChangeHandler.call(this.
-          observableKeys,[{name:key,object:this.observableKeys,type:'update',
-          oldValue:this.sourceObject[key]}]);
+    if(callOnInit||false){
+      var changes=[];
+      for(var key in this.sourceObject)
+        if(typeof this.sourceObject[key]!=='function')
+          changes.push({name:key,object:this.sourceObject,type:'update',
+            oldValue:this.sourceObject[key]});
+
+      userChangeHandler.call(this.sourceObject,changes);
+    }
   }
 
   ObservingWrapper.prototype.defineObservableProperties = function() {
