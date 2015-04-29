@@ -85,7 +85,7 @@ setTimeout(function(){
     }
   });
 
-  ow(obj2,function(changes){
+  ow.observe(obj2,function(changes){
     var ch;
     for(var k=0;k<changes.length;k++){
       ch=changes[k];
