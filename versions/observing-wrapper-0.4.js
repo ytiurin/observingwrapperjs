@@ -1,11 +1,11 @@
 /*
- * Observing wrapper v0.4.1
+ * Observing wrapper v0.4
  * https://github.com/ytiurin/observingwrapperjs
  *
  * Copyright (c) 2014 Yevhen Tiurin
  * Licensed under MIT (https://github.com/ytiurin/observingwrapperjs/blob/master/LICENSE)
  *
- * May 12, 2015
+ * April 29, 2015
  */
 'use strict';
 
@@ -161,9 +161,6 @@
   {
     var objWrapper;
 
-    if(!obj)
-      return obj;
-
     if(obj.observableKeys)
       objWrapper=obj;
     else
@@ -186,9 +183,6 @@
   {
     var objWrapper;
 
-    if(!obj)
-      return this;
-
     if(obj.observableKeys)
       objWrapper=obj;
     else
@@ -200,8 +194,6 @@
 
     if(objWrapper&&handler)
       objWrapper.removeChangeHandler(handler);
-    
-    return this;
   }
 
   function observingInstance()
