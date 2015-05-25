@@ -5,7 +5,7 @@
  * Copyright (c) 2014 Yevhen Tiurin
  * Licensed under MIT (https://github.com/ytiurin/observingwrapperjs/blob/master/LICENSE)
  *
- * May 12, 2015
+ * May 25, 2015
  */
 'use strict';
 
@@ -182,12 +182,12 @@
     return objWrapper.observableKeys;
   }
 
-  function unobserveObject(obj,handler)
+  function getObservableKeys(obj)
   {
     var objWrapper;
 
     if(!obj)
-      return this;
+      return obj;
 
     if(obj.observableKeys)
       objWrapper=obj;
@@ -198,8 +198,28 @@
           break;
         }
 
-    if(objWrapper&&handler)
-      objWrapper.removeChangeHandler(handler);
+    if(!objWrapper)
+      this.wrappers.push(objWrapper=new ObservingWrapper(obj));
+
+    return objWrapper.observableKeys;
+  }
+
+  function observeObject(obj,handler,callOnInit)
+  {
+    var wrapper=getObservableKeys.bind(this)(obj);
+
+    if(wrapper)
+      wrapper.__observingWrapper.addChangeHandler(handler,callOnInit);
+    
+    return this;
+  }
+
+  function unobserveObject(obj,handler)
+  {
+    var wrapper=getObservableKeys.bind(this)(obj);
+
+    if(wrapper)
+      wrapper.__observingWrapper.removeChangeHandler(handler);
     
     return this;
   }
@@ -208,7 +228,7 @@
   {
     this.wrappers=[];
 
-    var ow=observeObject.bind(this);
+    var ow=getObservableKeys.bind(this);
     ow.__ObservingWrapper=ObservingWrapper;
     ow.observe=observeObject.bind(this);
     ow.unobserve=unobserveObject.bind(this);

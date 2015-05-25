@@ -75,7 +75,7 @@ setTimeout(function(){
   var i=0,s=0;
   var obj1={p:'foo',f:new Function};
   var obj2={o:'foo',j:new Function};
-  ow(obj1,function(changes){
+  ow.observe(obj1,function(changes){
     var ch;
     for(var k=0;k<changes.length;k++){
       ch=changes[k];
