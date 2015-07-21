@@ -1,7 +1,7 @@
 observing-wrapper.js
 ==================
 
-A data bind booster.
+A data bind booster. Moved to [https://github.com/ytiurin/observing-proxy.js](https://github.com/ytiurin/observing-proxy.js)
 
 ##Usage
 ```javascript
